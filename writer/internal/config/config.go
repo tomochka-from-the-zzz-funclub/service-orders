@@ -14,14 +14,6 @@ type Config struct {
 }
 
 func LoadConfig() Config {
-	// err := godotenv.Load("configs/docker.env")
-
-	// if err != nil {
-	// 	log.Fatalf("Ошибка загрузки .env файла: %v", err)
-	// }
-
-	log.Println("=", os.Getenv("ENV"), "=", os.Getenv("ENV") != "docker")
-	fmt.Printf("=%s=", os.Getenv("ENV"))
 	if os.Getenv("ENV") != "docker" {
 		if err := godotenv.Load("configs/local.env"); err != nil {
 			log.Fatal("Error loading .env file")

@@ -25,8 +25,8 @@ func NewOrderCache(ord models.Order) OrderCache {
 	}
 }
 
-func NewStore() Store {
-	return Store{data: make(map[string]OrderCache)}
+func NewStore() *Store {
+	return &Store{data: make(map[string]OrderCache)}
 }
 
 func (s *Store) Add(order models.Order) error {

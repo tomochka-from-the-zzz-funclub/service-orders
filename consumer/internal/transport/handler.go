@@ -17,11 +17,11 @@ import (
 )
 
 type HandlersBuilder struct {
-	srv  *service.Srv
+	srv  service.InterfaceService
 	rout *router.Router
 }
 
-func HandleCreate(cfg config.Config, s *service.Srv) {
+func HandleCreate(cfg config.Config, s service.InterfaceService) {
 	hb := HandlersBuilder{
 		srv:  s,
 		rout: router.New(),
@@ -37,30 +37,40 @@ func HandleCreate(cfg config.Config, s *service.Srv) {
 }
 
 func (hb *HandlersBuilder) Get() func(ctx *fasthttp.RequestCtx) {
-	myLog.Log.Infof("Start func Get")
+	myLog.Log.Infof("start func Get")
 	return metrics(func(ctx *fasthttp.RequestCtx) {
 		if ctx.IsGet() {
-			orderUUID, err_ := ParseJsonUUID(ctx)
+			orderUUIDjson := string(ctx.QueryArgs().Peek("order_uuid"))
+			orderUUID, err_ := ParseJsonUUID(orderUUIDjson)
 			if err_ != nil {
-				err_ := WriteJson(ctx, err_.Error())
+				err_ := WriteJson(ctx, my_errors.ErrParseJSON.Error())
 
 				if err_ != nil {
+					myLog.Log.Warnf("there is no way to record an error")
 				}
 
 			} else {
-				myLog.Log.Debugf("sucsess parse")
+				myLog.Log.Debugf("sucsess parse json in func Get")
 				order, err := hb.srv.GetOrderSrv(orderUUID)
 				if err != nil {
-					WriteJson(ctx, err.Error())
+					err_ := WriteJson(ctx, err.Error())
+					if err_ != nil {
+						myLog.Log.Warnf("there is no way to record an error")
+					}
 				} else {
 					myLog.Log.Debugf("sucsess get")
-					WriteJsonOrder(ctx, order)
+					err_ := WriteJsonOrder(ctx, order)
+					if err_ != nil {
+						myLog.Log.Warnf("there is no way to record an error")
+					}
 				}
 			}
 		} else {
-			WriteJson(ctx, my_errors.ErrMethodNotAllowed.Error())
-			ctx.SetStatusCode(fasthttp.StatusMethodNotAllowed)
-			myLog.Log.Debugf("MethodNotAllowed")
+			err_ := WriteJson(ctx, my_errors.ErrMethodNotAllowed.Error())
+			if err_ != nil {
+				myLog.Log.Warnf("there is no way to record an error")
+			}
+			myLog.Log.Warnf("MethodNotAllowed")
 		}
 	}, "Get")
 }

@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
-	myErrors "github.com/tomochka-from-the-zzz-funclub/go-L0-Kafka/internal/err"
-	"github.com/tomochka-from-the-zzz-funclub/go-L0-Kafka/internal/models"
+	myErrors "writer/internal/errors"
+	"writer/internal/models"
 
 	"github.com/valyala/fasthttp"
 )
@@ -31,7 +31,7 @@ func WriteJson(ctx *fasthttp.RequestCtx, s string) error {
 	ctx.Response.BodyWriter()
 	err := json.NewEncoder((*ctx).Response.BodyWriter()).Encode(s)
 	if err != nil {
-		return myErrors.ErrWriteJSON
+		return err //myErrors.ErrWriteJSON
 	}
 	return nil
 }

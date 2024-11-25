@@ -37,11 +37,11 @@ func WriteJson(ctx *fasthttp.RequestCtx, s string) error {
 	return nil
 }
 
-func ParseJsonUUID(ctx *fasthttp.RequestCtx) (string, error) {
+func ParseJsonUUID(order_json string) (string, error) {
 	var orderUUID struct {
 		ID string `json:"order_uid"`
 	}
-	err := json.NewDecoder(bytes.NewReader(ctx.Request.Body())).Decode(&orderUUID)
+	err := json.NewDecoder(bytes.NewReader([]byte(order_json))).Decode(&orderUUID)
 	if err != nil {
 		myLog.Log.Errorf("error in parse json", err.Error())
 		return "", myErrors.ErrParseJSON

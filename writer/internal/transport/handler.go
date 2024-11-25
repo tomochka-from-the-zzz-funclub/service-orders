@@ -5,9 +5,9 @@ import (
 	"os"
 	"time"
 
-	my_errors "github.com/tomochka-from-the-zzz-funclub/go-L0-Kafka/internal/err"
-	myLog "github.com/tomochka-from-the-zzz-funclub/go-L0-Kafka/internal/logger"
-	publisher "github.com/tomochka-from-the-zzz-funclub/go-L0-Kafka/internal/publisher"
+	my_errors "writer/internal/errors"
+	myLog "writer/internal/logger"
+	publisher "writer/internal/publisher"
 
 	"net/http"
 
@@ -17,11 +17,10 @@ import (
 	"github.com/valyala/fasthttp"
 
 	"github.com/rs/zerolog"
-	//"github.com/rs/zerolog/log"
 )
 
 type HandlersBuilder struct {
-	pub  *publisher.KafkaClient
+	pub  publisher.InterfaceKafkaClient
 	lg   zerolog.Logger
 	rout *router.Router
 }

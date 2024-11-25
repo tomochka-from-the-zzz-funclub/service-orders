@@ -1,0 +1,76 @@
+version: '3'
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: wb
+      # https://stackoverflow.com/questions/60193781/postgres-with-docker-compose-gives-fatal-role-root-does-not-exist-error/60194261#60194261
+      PGUSER: postgres
+    ports:
+      - "7000:5432"
+    # https://stackoverflow.com/questions/65115627/safe-ways-to-specify-postgres-parameters-for-healthchecks-in-docker-compose
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "wb"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s  
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "22181:2181"
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - "25093:25093"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:25093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo 'test message'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  consumer:
+    build: 
+      context: ./consumer
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    depends_on:
+      kafka: 
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    env_file:
+      - consumer/configs/docker.env
+    # networks:
+    #   - kafka-network
+
+  writer:
+    build:
+      context: ./writer
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    depends_on:
+      - kafka
+    # networks:
+    #   - kafka-network
+
+# networks:
+#   kafka-network:
+#     driver: bridge

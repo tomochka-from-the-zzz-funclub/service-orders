@@ -32,7 +32,67 @@ func NewPostgres(cfg config.Config) *Postgres {
 		myLog.Log.Debugf("ping success")
 	}
 	time.Sleep(time.Minute)
+	query :=
+		` CREATE TABLE orders (
+    order_uid VARCHAR(255) PRIMARY KEY,
+    track_number VARCHAR(255),
+    entry VARCHAR(255),
+    delivery UUID,
+    payment UUID,
+    items UUID[],
+    locale VARCHAR(3),
+    internal_signature VARCHAR(255),
+    customer_id VARCHAR(255),
+    delivery_service VARCHAR(255),
+    shardkey INT,
+    sm_id INT,
+    date_created VARCHAR(255),
+    oof_shard INT
+);
 
+CREATE TABLE payment (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    transaction VARCHAR(255),
+    request_id VARCHAR(255),
+    currency VARCHAR(3),
+    provider VARCHAR(255),
+    amount INT,
+    payment_dt INT,
+    bank VARCHAR(255),
+    delivery_cost INT,
+    goods_total INT,
+    custom_fee INT
+);
+
+CREATE TABLE items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    chrt_id INT,
+    track_number VARCHAR(255),
+    price INT,
+    rid VARCHAR(255),
+    name VARCHAR(255),
+    sale INT,
+    size INT,
+    total_price INT,
+    nm_id INT,
+    brand VARCHAR(255),
+    status VARCHAR(255)
+);
+
+CREATE TABLE delivery (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255),
+    phone VARCHAR(255),
+    zip INT,
+    city VARCHAR(255),
+    address VARCHAR(255),
+    region VARCHAR(255),
+    email VARCHAR(255)
+);`
+	_, err = db.Exec(query)
+	if err != nil {
+		myLog.Log.Errorf(err.Error())
+	}
 	return &Postgres{
 		Connection: db,
 	} //, nil
@@ -108,13 +168,209 @@ func (db *Postgres) AddOrder(order models.Order) (string, error) {
 	return order.OrderUID, nil
 }
 
+// func (db *Postgres) GetOrder(order_uuid string) (models.Order, error) {
+// 	myLog.Log.Debugf("Go to db in GetOrder")
+
+// 	var order models.Order
+// 	var delivery models.Delivery
+// 	var payment models.Payment
+
+// 	query_get_order := `
+//     SELECT
+//         o.track_number,
+//         o.entry,
+//         d.name, d.phone, d.zip, d.city, d.address, d.region, d.email,
+//         p.transaction, p.request_id, p.currency, p.provider, p.amount, p.payment_dt, p.bank, p.delivery_cost, p.goods_total, p.custom_fee,
+//         i.chrt_id, i.track_number, i.price, i.rid, i.name, i.sale, i.size, i.total_price, i.nm_id, i.brand, i.status
+//     FROM
+//         orders o
+//     LEFT JOIN
+//         delivery d ON o.delivery = d.id
+//     LEFT JOIN
+//         payment p ON o.payment = p.id
+//     LEFT JOIN
+//         items i ON i.id = ANY(o.items)
+//     WHERE
+//         o.order_uid = $1`
+
+// 	rows, err := db.Connection.Query(query_get_order, order_uuid)
+// 	if err != nil {
+// 		myLog.Log.Errorf("Error GetOrder: %v", err.Error())
+// 		return models.Order{}, err
+// 	}
+// 	defer rows.Close()
+
+// 	itemMap := make(map[string]models.Item)
+
+// 	for rows.Next() {
+// 		var item models.Item
+
+// 		err = rows.Scan(
+// 			&order.TrackNumber,
+// 			&order.Entry,
+// 			&delivery.Name,
+// 			&delivery.Phone,
+// 			&delivery.Zip,
+// 			&delivery.City,
+// 			&delivery.Address,
+// 			&delivery.Region,
+// 			&delivery.Email,
+// 			&payment.Transaction,
+// 			&payment.RequestID,
+// 			&payment.Currency,
+// 			&payment.Provider,
+// 			&payment.Amount,
+// 			&payment.PaymentDT,
+// 			&payment.Bank,
+// 			&payment.DeliveryCost,
+// 			&payment.GoodsTotal,
+// 			&payment.CustomFee,
+// 			&item.ChrtID,
+// 			&item.TrackNumber,
+// 			&item.Price,
+// 			&item.Rid,
+// 			&item.Name,
+// 			&item.Sale,
+// 			&item.Size,
+// 			&item.TotalPrice,
+// 			&item.NmID,
+// 			&item.Brand,
+// 			&item.Status,
+// 		)
+
+// 		if err != nil {
+// 			myLog.Log.Errorf("Error scanning row: %v", err.Error())
+// 			return models.Order{}, err
+// 		}
+// 	}
+// 	for _, item := range itemMap {
+// 		order.Items = append(order.Items, item)
+// 	}
+// 	order.OrderUID = order_uuid
+// 	return order, nil
+// }
+
+// func (db *Postgres) GetOrder(order_uuid string) (models.Order, error) {
+// 	myLog.Log.Debugf("Go to bd in Get")
+// 	var order models.Order
+// 	var delivery models.Delivery
+// 	var payment models.Payment
+// 	var items []models.Item
+// 	var item models.Item
+// 	var id_delivery, id_payment string
+// 	var id_items []string
+// 	query_get_order :=
+// 		`SELECT track_number, entry, delivery, payment, items, locale, internal_signature, customer_id, delivery_service, shardkey,sm_id, date_created,oof_shard
+// 	FROM orders
+// 	WHERE order_uid = $1`
+// 	err := db.Connection.QueryRow(query_get_order, order_uuid).Scan(&order.TrackNumber, &order.Entry, &id_delivery, &id_payment, pq.Array(&id_items),
+// 		&order.Locale, &order.InternalSignature, &order.CustomerID, &order.DeliveryService, &order.ShardKey, &order.SmID, &order.DateCreated, &order.OofShard)
+// 	if err != nil {
+// 		myLog.Log.Errorf("Error GetOrder: %v", err.Error())
+// 		return models.Order{}, err
+// 	}
+// 	query_get_delivery :=
+// 		`SELECT name, phone, zip, city, address, region, email
+// 	WHERE id = $1`
+// 	err = db.Connection.QueryRow(query_get_delivery, id_delivery).Scan(&delivery.Name, &delivery.Phone, &delivery.Zip, &delivery.City, &delivery.Address,
+// 		&delivery.Region, &delivery.Email)
+// 	if err != nil {
+// 		myLog.Log.Errorf("Error GetDdelivery: %v", err.Error())
+// 		return models.Order{}, err
+// 	}
+// 	query_get_payment :=
+// 		`SELECT transaction, request_id, currency, provider, amount, payment_dt, bank, delivery_cost, goods_total, custom_fee
+// 		WHERE id = $1`
+// 	err = db.Connection.QueryRow(query_get_payment, id_payment).Scan(&payment.Transaction, &payment.RequestID, &payment.Currency, &payment.Provider, &payment.Amount,
+// 		&payment.PaymentDT, &payment.Bank, &payment.DeliveryCost, payment.GoodsTotal, &payment.CustomFee)
+// 	if err != nil {
+// 		myLog.Log.Errorf("Error GetPayment: %v", err.Error())
+// 		return models.Order{}, err
+// 	}
+
+// 	query_get_item :=
+// 		`SELECT chrt_id, track_number, price, rid, name, sale, size, total_price, nm_id, brand, status
+// 	WHERE id = $1`
+// 	for i := 0; i < len(id_items); i++ {
+// 		err = db.Connection.QueryRow(query_get_item, id_items[i]).Scan(&item.ChrtID, &item.TrackNumber, &item.Price, &item.Rid, &item.Name, &item.Sale, &item.Size,
+// 			&item.TotalPrice, &item.NmID, &item.Brand, &item.Status)
+// 		if err != nil {
+// 			myLog.Log.Errorf("Error GetItems: %v", err.Error())
+// 			return models.Order{}, err
+// 		}
+// 		items = append(items, item)
+// 	}
+
+// 	order.Delivery = delivery
+// 	order.Items = items
+// 	order.Payment = payment
+
+// 	return order, nil
+// }
+
+// func (db *Postgres) GetOrder(order_uuid string) (models.Order, error) {
+// 	myLog.Log.Debugf("Go to bd in Get")
+// 	var order models.Order
+// 	var delivery models.Delivery
+// 	var payment models.Payment
+// 	var items []models.Item
+// 	var item models.Item
+// 	var id_delivery, id_payment string
+// 	var id_items []string
+// 	query_get_order :=
+// 		`SELECT track_number, entry, delivery, payment, items, locale, internal_signature, customer_id, delivery_service, shardkey,sm_id, date_created,oof_shard
+// 	FROM orders
+// 	WHERE order_uid = $1`
+// 	err := db.Connection.QueryRow(query_get_order, order_uuid).Scan(&order.TrackNumber, &order.Entry, &id_delivery, &id_payment, pq.Array(&id_items),
+// 		&order.Locale, &order.InternalSignature, &order.CustomerID, &order.DeliveryService, &order.ShardKey, &order.SmID, &order.DateCreated, &order.OofShard)
+// 	if err != nil {
+// 		myLog.Log.Errorf("Error GetOrder: %v", err.Error())
+// 		return models.Order{}, err
+// 	}
+// 	query_get_delivery :=
+// 		`SELECT name, phone, zip, city, address, region, email
+// 	WHERE id = $1`
+// 	err = db.Connection.QueryRow(query_get_delivery, id_delivery).Scan(&delivery.Name, &delivery.Phone, &delivery.Zip, &delivery.City, &delivery.Address,
+// 		&delivery.Region, &delivery.Email)
+// 	if err != nil {
+// 		myLog.Log.Errorf("Error GetDdelivery: %v", err.Error())
+// 		return models.Order{}, err
+// 	}
+// 	query_get_payment :=
+// 		`SELECT transaction, request_id, currency, provider, amount, payment_dt, bank, delivery_cost, goods_total, custom_fee
+// 		WHERE id = $1`
+// 	err = db.Connection.QueryRow(query_get_payment, id_payment).Scan(&payment.Transaction, &payment.RequestID, &payment.Currency, &payment.Provider, &payment.Amount,
+// 		&payment.PaymentDT, &payment.Bank, &payment.DeliveryCost, payment.GoodsTotal, &payment.CustomFee)
+// 	if err != nil {
+// 		myLog.Log.Errorf("Error GetPayment: %v", err.Error())
+// 		return models.Order{}, err
+// 	}
+
+// 	query_get_item :=
+// 		`SELECT chrt_id, track_number, price, rid, name, sale, size, total_price, nm_id, brand, status
+// 	WHERE id = $1`
+// 	for i := 0; i < len(id_items); i++ {
+// 		err = db.Connection.QueryRow(query_get_item, id_items[i]).Scan(&item.ChrtID, &item.TrackNumber, &item.Price, &item.Rid, &item.Name, &item.Sale, &item.Size,
+// 			&item.TotalPrice, &item.NmID, &item.Brand, &item.Status)
+// 		if err != nil {
+// 			myLog.Log.Errorf("Error GetItems: %v", err.Error())
+// 			return models.Order{}, err
+// 		}
+// 		items = append(items, item)
+// 	}
+
+// 	order.Delivery = delivery
+// 	order.Items = items
+// 	order.Payment = payment
+
+// 	return order, nil
+// }
+
 func (db *Postgres) GetOrder(order_uuid string) (models.Order, error) {
 	myLog.Log.Debugf("Go to db in GetOrder")
-
 	var order models.Order
 	var delivery models.Delivery
 	var payment models.Payment
-
 	query_get_order := `
     SELECT 
         o.track_number, 
@@ -132,19 +388,15 @@ func (db *Postgres) GetOrder(order_uuid string) (models.Order, error) {
         items i ON i.id = ANY(o.items)
     WHERE 
         o.order_uid = $1`
-
 	rows, err := db.Connection.Query(query_get_order, order_uuid)
 	if err != nil {
 		myLog.Log.Errorf("Error GetOrder: %v", err.Error())
 		return models.Order{}, err
 	}
 	defer rows.Close()
-
 	itemMap := make(map[string]models.Item)
-
 	for rows.Next() {
 		var item models.Item
-
 		err = rows.Scan(
 			&order.TrackNumber,
 			&order.Entry,
@@ -177,7 +429,6 @@ func (db *Postgres) GetOrder(order_uuid string) (models.Order, error) {
 			&item.Brand,
 			&item.Status,
 		)
-
 		if err != nil {
 			myLog.Log.Errorf("Error scanning row: %v", err.Error())
 			return models.Order{}, err
@@ -186,6 +437,5 @@ func (db *Postgres) GetOrder(order_uuid string) (models.Order, error) {
 	for _, item := range itemMap {
 		order.Items = append(order.Items, item)
 	}
-
 	return order, nil
 }

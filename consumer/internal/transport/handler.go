@@ -36,33 +36,63 @@ func HandleCreate(cfg config.Config, s service.InterfaceService) {
 	fmt.Println(fasthttp.ListenAndServe(":8080", hb.rout.Handler))
 }
 
+// func (hb *HandlersBuilder) Get() func(ctx *fasthttp.RequestCtx) {
+// 	myLog.Log.Infof("start func Get")
+// 	return metrics(func(ctx *fasthttp.RequestCtx) {
+// 		if ctx.IsGet() {
+// 			orderUUIDjson := string(ctx.QueryArgs().Peek("order_uid"))
+
+// 			myLog.Log.Debugf("sucsess parse json in func Get with id %+v", orderUUIDjson)
+// 			order, err := hb.srv.GetOrderSrv(orderUUIDjson)
+// 			if err != nil {
+// 				// err_ := WriteJson(ctx, err.Error())
+// 				// if err_ != nil {
+// 				myLog.Log.Warnf("there is no way to record an error")
+// 				//}
+// 				ctx.SetStatusCode(fasthttp.StatusNotFound)
+// 			} else {
+// 				myLog.Log.Debugf("sucsess get")
+// 				err_ := WriteJsonOrder(ctx, order)
+// 				if err_ != nil {
+// 					myLog.Log.Warnf("there is no way to record an error")
+// 				}
+// 			}
+// 		} else {
+// 			err_ := WriteJson(ctx, my_errors.ErrMethodNotAllowed.Error())
+// 			if err_ != nil {
+// 				myLog.Log.Warnf("there is no way to record an error")
+// 			}
+// 			myLog.Log.Warnf("MethodNotAllowed")
+// 		}
+// 	}, "Get")
+// }
+
 func (hb *HandlersBuilder) Get() func(ctx *fasthttp.RequestCtx) {
-	myLog.Log.Infof("start func Get")
+	myLog.Log.Infof("Start func Get")
 	return metrics(func(ctx *fasthttp.RequestCtx) {
 		if ctx.IsGet() {
-			orderUUIDjson := string(ctx.QueryArgs().Peek("order_uid"))
+			orderUUID := string(ctx.QueryArgs().Peek("order_uid"))
+			myLog.Log.Debugf("sucsess parse json in func Get with id %+v", orderUUID)
 
-			myLog.Log.Debugf("sucsess parse json in func Get")
-			order, err := hb.srv.GetOrderSrv(orderUUIDjson)
+			//orderUUID, err_ := ParseJsonUUID(ctx)
+			// if err_ != nil {
+			// 	err_ := WriteJson(ctx, err_.Error())
+			// 	if err_ != nil {
+			// 	}
+			// } else {
+			//myLog.Log.Debugf("sucsess parse")
+			order, err := hb.srv.GetOrderSrv(orderUUID)
 			if err != nil {
-				err_ := WriteJson(ctx, err.Error())
-				if err_ != nil {
-					myLog.Log.Warnf("there is no way to record an error")
-				}
-				ctx.SetStatusCode(fasthttp.StatusNotFound)
+				WriteJson(ctx, err.Error())
 			} else {
 				myLog.Log.Debugf("sucsess get")
-				err_ := WriteJsonOrder(ctx, order)
-				if err_ != nil {
-					myLog.Log.Warnf("there is no way to record an error")
-				}
+				WriteJsonOrder(ctx, order)
 			}
+			//}
 		} else {
-			err_ := WriteJson(ctx, my_errors.ErrMethodNotAllowed.Error())
-			if err_ != nil {
-				myLog.Log.Warnf("there is no way to record an error")
-			}
-			myLog.Log.Warnf("MethodNotAllowed")
+			WriteJson(ctx, my_errors.ErrMethodNotAllowed.Error())
+			ctx.SetStatusCode(fasthttp.StatusMethodNotAllowed)
+			myLog.Log.Debugf("MethodNotAllowed")
 		}
 	}, "Get")
 }

@@ -40,29 +40,21 @@ func (hb *HandlersBuilder) Get() func(ctx *fasthttp.RequestCtx) {
 	myLog.Log.Infof("start func Get")
 	return metrics(func(ctx *fasthttp.RequestCtx) {
 		if ctx.IsGet() {
-			orderUUIDjson := string(ctx.QueryArgs().Peek("order_uuid"))
-			orderUUID, err_ := ParseJsonUUID(orderUUIDjson)
-			if err_ != nil {
-				err_ := WriteJson(ctx, my_errors.ErrParseJSON.Error())
+			orderUUIDjson := string(ctx.QueryArgs().Peek("order_uid"))
 
+			myLog.Log.Debugf("sucsess parse json in func Get")
+			order, err := hb.srv.GetOrderSrv(orderUUIDjson)
+			if err != nil {
+				err_ := WriteJson(ctx, err.Error())
 				if err_ != nil {
 					myLog.Log.Warnf("there is no way to record an error")
 				}
-
+				ctx.SetStatusCode(fasthttp.StatusNotFound)
 			} else {
-				myLog.Log.Debugf("sucsess parse json in func Get")
-				order, err := hb.srv.GetOrderSrv(orderUUID)
-				if err != nil {
-					err_ := WriteJson(ctx, err.Error())
-					if err_ != nil {
-						myLog.Log.Warnf("there is no way to record an error")
-					}
-				} else {
-					myLog.Log.Debugf("sucsess get")
-					err_ := WriteJsonOrder(ctx, order)
-					if err_ != nil {
-						myLog.Log.Warnf("there is no way to record an error")
-					}
+				myLog.Log.Debugf("sucsess get")
+				err_ := WriteJsonOrder(ctx, order)
+				if err_ != nil {
+					myLog.Log.Warnf("there is no way to record an error")
 				}
 			}
 		} else {

@@ -30,6 +30,8 @@ func NewStore() *Store {
 }
 
 func (s *Store) Add(order models.Order) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	myLog.Log.Debugf("Start fun Add in cache")
 	_, ok := s.data[order.OrderUID]
 	if ok {
@@ -41,8 +43,8 @@ func (s *Store) Add(order models.Order) error {
 }
 
 func (s *Store) Get(OrderUID string) (models.Order, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	val, ok := s.data[OrderUID]
 	if ok {
 		//s.mu.Unlock()
@@ -53,7 +55,9 @@ func (s *Store) Get(OrderUID string) (models.Order, error) {
 }
 
 func (s *Store) GetAll() []models.Order {
-	res := make([]models.Order, len(s.data), 0)
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	res := make([]models.Order, 0, len(s.data)) // Исправлено создание среза
 	for _, order := range s.data {
 		res = append(res, order.Ord)
 	}
@@ -66,13 +70,13 @@ func (c *Store) StartGC() {
 
 func (c *Store) GC() {
 	for {
-		c.deleteExpiredKeys()
+		c.DeleteExpiredKeys()
 	}
 
 }
 
 // expiredKeys возвращает список "просроченных" ключей
-func (c *Store) deleteExpiredKeys() {
+func (c *Store) DeleteExpiredKeys() {
 
 	c.mu.Lock()
 

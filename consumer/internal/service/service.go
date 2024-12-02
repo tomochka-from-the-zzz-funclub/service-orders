@@ -33,7 +33,7 @@ func (s *Srv) GetOrderSrv(orderUUID string) (models.Order, error) {
 		if err != nil {
 			return models.Order{}, err
 		}
-		s.cache.Add(order)
+		s.cache.Add(orderdb)
 		return orderdb, nil
 	}
 	return order, nil

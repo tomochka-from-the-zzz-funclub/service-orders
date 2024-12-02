@@ -8,5 +8,5 @@ type Cache interface {
 	GetAll() []models.Order
 	StartGC()
 	GC()
-	deleteExpiredKeys()
+	DeleteExpiredKeys()
 }

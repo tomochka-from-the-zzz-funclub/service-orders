@@ -40,3 +40,6 @@ var ErrPing = NewError(fasthttp.StatusInternalServerError, "error ping postgres"
 
 // http
 var ErrMethodNotAllowed = NewError(fasthttp.StatusMethodNotAllowed, "method not allowed")
+
+// for test service
+var ErrNotFoundOrderCache = NewError(fasthttp.StatusNotFound, "not found order in cache")

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    </head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отправка JSON</title>
+    <script>
+        function sendData() {
+            const jsonData = document.getElementById('jsonInput').value;
+
+            fetch('http://localhost:8081/WB/set', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: jsonData,
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Сеть ответила с ошибкой');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Успех:', data);
+                alert('Данные успешно отправлены!');
+            })
+            .catch((error) => {
+                console.error('Ошибка:', error);
+                alert('Ошибка при отправке данных');
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>Отправка JSON-записи</h1>
+    <textarea id="jsonInput" rows="10" cols="50" placeholder='Введите JSON-данные здесь...'></textarea><br>
+    <button onclick="sendData()">Добавить</button>
+</body>
+</html>

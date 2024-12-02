@@ -33,7 +33,7 @@ func NewPostgres(cfg config.Config) *Postgres {
 	}
 	time.Sleep(time.Minute)
 	query :=
-		` CREATE TABLE orders (
+		` CREATE TABLE IF NOT EXISTS orders (
     order_uid VARCHAR(255) PRIMARY KEY,
     track_number VARCHAR(255),
     entry VARCHAR(255),
@@ -50,7 +50,7 @@ func NewPostgres(cfg config.Config) *Postgres {
     oof_shard INT
 );
 
-CREATE TABLE payment (
+CREATE TABLE IF NOT EXISTS payment (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     transaction VARCHAR(255),
     request_id VARCHAR(255),
@@ -64,7 +64,7 @@ CREATE TABLE payment (
     custom_fee INT
 );
 
-CREATE TABLE items (
+CREATE TABLE IF NOT EXISTS items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     chrt_id INT,
     track_number VARCHAR(255),
@@ -79,7 +79,7 @@ CREATE TABLE items (
     status VARCHAR(255)
 );
 
-CREATE TABLE delivery (
+CREATE TABLE IF NOT EXISTS delivery (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255),
     phone VARCHAR(255),
@@ -88,7 +88,8 @@ CREATE TABLE delivery (
     address VARCHAR(255),
     region VARCHAR(255),
     email VARCHAR(255)
-);`
+);
+`
 	_, err = db.Exec(query)
 	if err != nil {
 		myLog.Log.Errorf(err.Error())

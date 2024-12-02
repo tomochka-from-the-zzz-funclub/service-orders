@@ -2,6 +2,9 @@ package transport
 
 import (
 	"fmt"
+	"html/template"
+	"os"
+	"path/filepath"
 
 	"consumer/internal/config"
 	my_errors "consumer/internal/errors"
@@ -17,14 +20,32 @@ import (
 )
 
 type HandlersBuilder struct {
-	srv  service.InterfaceService
-	rout *router.Router
+	srv   service.InterfaceService
+	rout  *router.Router
+	templ *template.Template
 }
 
 func HandleCreate(cfg config.Config, s service.InterfaceService) {
+	fmt.Println(os.Getwd())
+	fmt.Println(os.ReadDir("./src"))
+	t, err := os.Getwd()
+	absolutePath, err := filepath.Abs(t)
+	if err != nil {
+		fmt.Println("Ошибка при получении абсолютного пути:", err)
+		return
+	}
+
+	fmt.Println("Абсолютный путь к директории:", absolutePath)
+	tmpl, err := template.ParseFiles("../app/fw.html")
+	if err != nil {
+		myLog.Log.Fatalf("GetHtml error during parsing of file: %v", err)
+		return
+	}
+
 	hb := HandlersBuilder{
-		srv:  s,
-		rout: router.New(),
+		srv:   s,
+		rout:  router.New(),
+		templ: tmpl,
 	}
 
 	go func() {
@@ -33,6 +54,7 @@ func HandleCreate(cfg config.Config, s service.InterfaceService) {
 	}()
 
 	hb.rout.GET("/WB/get", hb.Get())
+	hb.rout.GET("/WB/get", hb.GetHtml())
 	fmt.Println(fasthttp.ListenAndServe(":8080", hb.rout.Handler))
 }
 
@@ -41,7 +63,6 @@ func HandleCreate(cfg config.Config, s service.InterfaceService) {
 // 	return metrics(func(ctx *fasthttp.RequestCtx) {
 // 		if ctx.IsGet() {
 // 			orderUUIDjson := string(ctx.QueryArgs().Peek("order_uid"))
-
 // 			myLog.Log.Debugf("sucsess parse json in func Get with id %+v", orderUUIDjson)
 // 			order, err := hb.srv.GetOrderSrv(orderUUIDjson)
 // 			if err != nil {
@@ -66,6 +87,23 @@ func HandleCreate(cfg config.Config, s service.InterfaceService) {
 // 		}
 // 	}, "Get")
 // }
+
+func (hb *HandlersBuilder) GetHtml() func(ctx *fasthttp.RequestCtx) {
+	return metrics(func(ctx *fasthttp.RequestCtx) {
+		myLog.Log.Debugf("Start func GetHtml")
+		if ctx.IsGet() {
+			err := hb.templ.Execute(ctx.Response.BodyWriter(), nil)
+			if err != nil {
+				myLog.Log.Errorf("GetHtml error during executing of file: %v", err)
+				ctx.Response.SetStatusCode(400)
+				return
+			}
+			//ctx.Response.Header.Set("Content-Type", "text/plain")
+
+			ctx.Response.Header.Add("content-type", "text/html")
+		}
+	}, "GetHtml")
+}
 
 func (hb *HandlersBuilder) Get() func(ctx *fasthttp.RequestCtx) {
 	myLog.Log.Infof("Start func Get")

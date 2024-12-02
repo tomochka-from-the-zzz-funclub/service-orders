@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление заказами</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            text-align: center;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+        input, textarea {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            resize: none;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 10px 0;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .output {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+            text-align: left;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Управление заказами</h1>
+
+        <h2>Добавить заказ</h2>
+        <textarea id="jsonInput" rows="5" placeholder="Введите JSON"></textarea>
+        <button id="addButton">Добавить</button>
+
+        <h2>Генерация заказов</h2>
+        <input type="number" id="quantityInput" placeholder="Введите количество заказов">
+        <button id="generateButton">Сгенерировать</button>
+
+        <div id="output" class="output"></div>
+    </div>
+
+    <script>
+        document.getElementById('addButton').addEventListener('click', () => {
+            const jsonInput = document.getElementById('jsonInput').value;
+            const output = document.getElementById('output');
+            output.textContent = 'Загрузка...';
+
+            fetch('http://localhost:8081/WB/set', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: jsonInput
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Ошибка: ${response.status}`);
+                }
+                //return response.json();
+            })
+            .then(data => {
+                output.textContent = 'Успешное добавление:'; //+ JSON.stringify(data);
+            })
+            .catch(error => {
+                output.textContent = `Ошибка: ${error.message}`;
+            });
+        });
+
+        // document.getElementById('generateButton').addEventListener('click', () => {
+            
+        //     const quantity = document.getElementById('quantityInput').value;
+        //     const output = document.getElementById('output');
+        //     output.textContent = 'Загрузка...';
+
+        //     fetch(`http://localhost:8081/WB/set/generate?quantity=${encodeURIComponent(quantity)}`, {
+        //         method: 'POST',
+        //     })
+        //     .then(response => {
+        //         if (!response.ok) {
+        //             throw new Error(`Ошибка: ${response.status}`);
+        //         }
+        //         return response.json();
+        //     })
+        //     .then(data => {
+        //         output.textContent = 'Успешное добавление заказов: ' + JSON.stringify(data);
+        //     })
+        //     .catch(error => {
+        //         output.textContent = `Ошибка: ${error.message}`;
+        //     });
+        // });
+        document.getElementById('generateButton').addEventListener('click', () => {
+    const quantity = document.getElementById('quantityInput').value;
+    const output = document.getElementById('output');
+    output.textContent = 'Загрузка...';
+
+    fetch(`http://localhost:8081/WB/set/generate?quantity=${encodeURIComponent(quantity)}`, {
+        method: 'POST',
+    })
+    .then(response => {
+        if (!response.ok) {
+            // Если ответ не успешный, выбрасываем ошибку
+            throw new Error(`Ошибка: ${response.status}`);
+        }
+        // return response.json();
+    })
+    .then(data => {
+        // Выводим успешное сообщение
+        output.textContent = 'Успешное добавление заказов';// + JSON.stringify(data);
+    })
+    .catch(error => {
+        // Выводим сообщение об ошибке только если она произошла
+        output.textContent = `Ошибка: ${error.message}`;
+    });
+});
+
+    </script>
+</body>
+</html>

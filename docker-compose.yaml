@@ -70,6 +70,23 @@ services:
       - kafka
     # networks:
     #   - kafka-network
+  # front_writer:
+  #   build:
+  #     context: ./frontWriter
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "81:81"
+  #   environment:
+  #     SERVICE_BASE_URL_SET: "writer:8081/WB/set"
+  #     SERVICE_BASE_URL_SET_GENERATE: "writer:8081/WB/set/generate"
+  # front_consumer:
+  #   build:
+  #     context: ./frontConsumer
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "80:80"
+  #   environment:
+  #     SERVICE_BASE_URL: "consumer:8080/WB/get"
 
 # networks:
 #   kafka-network:

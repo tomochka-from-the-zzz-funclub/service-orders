@@ -2,6 +2,10 @@ package transport
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"text/template"
+
 	//"html/template"
 	"strconv"
 
@@ -20,31 +24,31 @@ import (
 type HandlersBuilder struct {
 	pub publisher.InterfaceKafkaClient
 	//lg   zerolog.Logger
-	//tmpl *template.Template
+	tmpl *template.Template
 	rout *router.Router
 }
 
 func HandleCreate() {
-	// fmt.Println(os.Getwd())
-	// fmt.Println(os.ReadDir("./"))
-	// t, err := os.Getwd()
-	// absolutePath, err := filepath.Abs(t)
-	// if err != nil {
-	// 	fmt.Println("Ошибка при получении абсолютного пути:", err)
-	// 	return
-	// }
+	fmt.Println(os.Getwd())
+	fmt.Println(os.ReadDir("./src"))
+	t, err := os.Getwd()
+	absolutePath, err := filepath.Abs(t)
+	if err != nil {
+		fmt.Println("Ошибка при получении абсолютного пути:", err)
+		return
+	}
 
-	// fmt.Println("Абсолютный путь к директории:", absolutePath)
-	// tmpl, err := template.ParseFiles("../golang/go-L0-Kafka-master/writer/template/f.html")
-	// if err != nil {
-	// 	myLog.Log.Fatalf("GetHtml error during parsing of file: %v", err)
-	// 	return
-	// }
+	fmt.Println("Абсолютный путь к директории:", absolutePath)
+	tmpl, err := template.ParseFiles("../app/fw.html")
+	if err != nil {
+		myLog.Log.Fatalf("GetHtml error during parsing of file: %v", err)
+		return
+	}
 	hb := HandlersBuilder{
 		pub: publisher.NewKafkaClient(),
 		//lg:   zerolog.New(os.Stderr).With().Timestamp().Logger().Output(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.UnixDate}),
 		rout: router.New(),
-		//tmpl: tmpl,
+		tmpl: tmpl,
 	}
 	go func() {
 		http.Handle("/metrics", promhttp.Handler())
@@ -52,26 +56,28 @@ func HandleCreate() {
 	}()
 
 	hb.rout.POST("/WB/set", hb.Set())
-	//hb.rout.GET("/WB/set", hb.GetHtml())
+	hb.rout.GET("/WB/set", hb.GetHtml())
 	hb.rout.POST("/WB/set/generate", hb.SetGenerateJson())
 	myLog.Log.Debugf("Service writer started")
 	fmt.Println(fasthttp.ListenAndServe(":8081", hb.rout.Handler))
 }
 
-// func (hb *HandlersBuilder) GetHtml() func(ctx *fasthttp.RequestCtx) {
-// 	return metrics(func(ctx *fasthttp.RequestCtx) {
-// 		myLog.Log.Debugf("Start func GetHtml")
-// 		if ctx.IsGet() {
-// 			err := hb.tmpl.Execute(ctx.Response.BodyWriter(), nil)
-// 			if err != nil {
-// 				myLog.Log.Errorf("GetHtml error during executing of file: %v", err)
-// 				ctx.Response.SetStatusCode(400)
-// 				return
-// 			}
-// 			ctx.Response.Header.Add("content-type", "text/html")
-// 		}
-// 	}, "GetHtml")
-// }
+func (hb *HandlersBuilder) GetHtml() func(ctx *fasthttp.RequestCtx) {
+	return metrics(func(ctx *fasthttp.RequestCtx) {
+		myLog.Log.Debugf("Start func GetHtml")
+		if ctx.IsGet() {
+			err := hb.tmpl.Execute(ctx.Response.BodyWriter(), nil)
+			if err != nil {
+				myLog.Log.Errorf("GetHtml error during executing of file: %v", err)
+				ctx.Response.SetStatusCode(400)
+				return
+			}
+			//ctx.Response.Header.Set("Content-Type", "text/plain")
+
+			ctx.Response.Header.Add("content-type", "text/html")
+		}
+	}, "GetHtml")
+}
 
 func (hb *HandlersBuilder) Set() func(ctx *fasthttp.RequestCtx) {
 	return metrics(func(ctx *fasthttp.RequestCtx) {
@@ -110,7 +116,8 @@ func (hb *HandlersBuilder) Set() func(ctx *fasthttp.RequestCtx) {
 
 func (hb *HandlersBuilder) SetGenerateJson() func(ctx *fasthttp.RequestCtx) {
 	return metrics(func(ctx *fasthttp.RequestCtx) {
-		myLog.Log.Debugf("Start func SetGenerateJson")
+
+		myLog.Log.Debugf("Start func SetGenerateJson, Method: %+v", ctx.Request.Header.Method())
 		if ctx.IsPost() {
 			quantity_s := string(ctx.QueryArgs().Peek("quantity"))
 			fmt.Println(quantity_s)
@@ -119,7 +126,7 @@ func (hb *HandlersBuilder) SetGenerateJson() func(ctx *fasthttp.RequestCtx) {
 				quantity_s = "5"
 			} else {
 				quantity, err := strconv.Atoi(quantity_s)
-				fmt.Println(quantity, " ", err)
+				//fmt.Println(quantity, " ", err)
 				if err != nil {
 					ctx.SetStatusCode(fasthttp.StatusBadRequest)
 				} else {

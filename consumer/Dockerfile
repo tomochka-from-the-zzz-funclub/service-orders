@@ -71,6 +71,7 @@ COPY --from=builder /app/cmd/api-gateway /api-gateway
 COPY wait-for-it.sh /app/wait-for-it.sh
 # Даем права на выполнение для wait-for-it.sh
 RUN chmod +x /app/wait-for-it.sh
+COPY template/fc.html /app
 
 # Устанавливаем команду для запуска
 CMD ["/app/wait-for-it.sh", "kafka:9092", "--", "/api-gateway"]

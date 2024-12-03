@@ -2,7 +2,6 @@ package myLog
 
 import (
 	"os"
-	"time"
 
 	"github.com/rs/zerolog"
 )
@@ -18,13 +17,13 @@ type MyLogger struct {
 }
 
 func initLogger() *MyLogger {
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+
 	return &MyLogger{
-		Lg: zerolog.New(os.Stderr).With().Timestamp().Logger().Output(zerolog.ConsoleWriter{
-			Out:        os.Stdout,
-			TimeFormat: time.UnixDate,
-		}),
+		Lg: zerolog.New(os.Stdout).With().Timestamp().Logger(),
 	}
 }
+
 func (l *MyLogger) Infof(mes string, v ...interface{}) {
 	if len(v) == 0 {
 		l.Lg.Info().Msgf(mes)

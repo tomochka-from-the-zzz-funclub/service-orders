@@ -9,7 +9,8 @@ import (
 )
 
 func TestAdd(t *testing.T) {
-	s := NewStore()
+	m := map[string]models.Order{}
+	s := NewStore(m)
 	order := models.Order{OrderUID: "test-uuid"}
 
 	// Добавляем заказ
@@ -23,7 +24,8 @@ func TestAdd(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	s := NewStore()
+	m := map[string]models.Order{}
+	s := NewStore(m)
 	order := models.Order{OrderUID: "test-uuid"}
 
 	// Пытаемся получить заказ, который отсутствует
@@ -41,26 +43,9 @@ func TestGet(t *testing.T) {
 	assert.Equal(t, order, retrievedOrder)
 }
 
-func TestGetAll(t *testing.T) {
-	s := NewStore()
-	order1 := models.Order{OrderUID: "test-uuid1"}
-	order2 := models.Order{OrderUID: "test-uuid2"}
-
-	// Добавляем заказы
-	err := s.Add(order1)
-	assert.NoError(t, err)
-	err = s.Add(order2)
-	assert.NoError(t, err)
-
-	// Получаем все заказы
-	allOrders := s.GetAll()
-	assert.Len(t, allOrders, 2)
-	assert.Contains(t, allOrders, order1)
-	assert.Contains(t, allOrders, order2)
-}
-
 func TestDeleteExpiredKeys(t *testing.T) {
-	s := NewStore()
+	m := map[string]models.Order{}
+	s := NewStore(m)
 	order := models.Order{OrderUID: "test-uuid"}
 
 	// Добавляем заказ

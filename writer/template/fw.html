@@ -80,7 +80,7 @@
             const output = document.getElementById('output');
             output.textContent = 'Загрузка...';
 
-            fetch('http://localhost:8081/WB/set', {
+            fetch('http://localhost:8081/api/v1/set', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -94,7 +94,7 @@
                 //return response.json();
             })
             .then(data => {
-                output.textContent = 'Успешное добавление:'; //+ JSON.stringify(data);
+                output.textContent = 'Успешное добавление'; //+ JSON.stringify(data);
             })
             .catch(error => {
                 output.textContent = `Ошибка: ${error.message}`;
@@ -128,7 +128,7 @@
     const output = document.getElementById('output');
     output.textContent = 'Загрузка...';
 
-    fetch(`http://localhost:8081/WB/set/generate?quantity=${encodeURIComponent(quantity)}`, {
+    fetch(`http://localhost:8081/api/v1/set/generate?quantity=${encodeURIComponent(quantity)}`, {
         method: 'POST',
     })
     .then(response => {

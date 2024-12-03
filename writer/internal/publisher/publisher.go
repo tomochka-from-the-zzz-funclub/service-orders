@@ -9,12 +9,10 @@ import (
 	"github.com/IBM/sarama"
 )
 
-// KafkaClient - структура для хранения продюсера и консьюмера Kafka
 type KafkaClient struct {
 	Producer sarama.SyncProducer
 }
 
-// NewKafkaClient - конструктор для создания новой структуры KafkaClient
 func NewKafkaClient() *KafkaClient {
 	producer, err := sarama.NewSyncProducer([]string{"kafka:9092"}, nil)
 

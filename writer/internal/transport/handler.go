@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"text/template"
 
-	//"html/template"
 	"strconv"
 
 	"net/http"
+	myErrors "writer/internal/errors"
 	"writer/internal/generator"
 	myLog "writer/internal/logger"
 	"writer/internal/models"
@@ -22,8 +22,7 @@ import (
 )
 
 type HandlersBuilder struct {
-	pub publisher.InterfaceKafkaClient
-	//lg   zerolog.Logger
+	pub  publisher.InterfaceKafkaClient
 	tmpl *template.Template
 	rout *router.Router
 }
@@ -45,8 +44,7 @@ func HandleCreate() {
 		return
 	}
 	hb := HandlersBuilder{
-		pub: publisher.NewKafkaClient(),
-		//lg:   zerolog.New(os.Stderr).With().Timestamp().Logger().Output(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.UnixDate}),
+		pub:  publisher.NewKafkaClient(),
 		rout: router.New(),
 		tmpl: tmpl,
 	}
@@ -55,9 +53,9 @@ func HandleCreate() {
 		http.ListenAndServe(":8090", nil)
 	}()
 
-	hb.rout.POST("/WB/set", hb.Set())
-	hb.rout.GET("/WB/set", hb.GetHtml())
-	hb.rout.POST("/WB/set/generate", hb.SetGenerateJson())
+	hb.rout.POST("/api/v1/set", hb.Set())
+	hb.rout.GET("/api/v1", hb.GetHtml())
+	hb.rout.POST("/api/v1/set/generate", hb.SetGenerateJson())
 	myLog.Log.Debugf("Service writer started")
 	fmt.Println(fasthttp.ListenAndServe(":8081", hb.rout.Handler))
 }
@@ -72,7 +70,6 @@ func (hb *HandlersBuilder) GetHtml() func(ctx *fasthttp.RequestCtx) {
 				ctx.Response.SetStatusCode(400)
 				return
 			}
-			//ctx.Response.Header.Set("Content-Type", "text/plain")
 
 			ctx.Response.Header.Add("content-type", "text/html")
 		}
@@ -98,7 +95,6 @@ func (hb *HandlersBuilder) Set() func(ctx *fasthttp.RequestCtx) {
 
 				if err != nil {
 					myLog.Log.Errorf("SendOrderToKafka", err.Error())
-					//WriteJson(ctx, "Error SendMessageOrder")
 				}
 				myLog.Log.Debugf("SendOrderToKafka")
 			} else {
@@ -106,10 +102,8 @@ func (hb *HandlersBuilder) Set() func(ctx *fasthttp.RequestCtx) {
 			}
 
 		} else {
-			// WriteJson(ctx, my_errors.ErrMethodNotAllowed.Error())
 			ctx.SetStatusCode(fasthttp.StatusMethodNotAllowed)
-			// fmt.Println("GET", ctx.Response.StatusCode())
-			// myLog.Log.Warnf("message from func Set %v", my_errors.ErrMethodNotAllowed.Error())
+			myLog.Log.Warnf("message from func Set %v", myErrors.ErrMethodNotAllowed.Error())
 		}
 	}, "Set")
 }
@@ -126,7 +120,6 @@ func (hb *HandlersBuilder) SetGenerateJson() func(ctx *fasthttp.RequestCtx) {
 				quantity_s = "5"
 			} else {
 				quantity, err := strconv.Atoi(quantity_s)
-				//fmt.Println(quantity, " ", err)
 				if err != nil {
 					ctx.SetStatusCode(fasthttp.StatusBadRequest)
 				} else {
@@ -145,7 +138,7 @@ func (hb *HandlersBuilder) SetGenerateJson() func(ctx *fasthttp.RequestCtx) {
 
 							if err != nil {
 								myLog.Log.Errorf("SendOrderToKafka", err.Error())
-								//ctx.SetStatusCode(fasthttp.Stat)
+								ctx.SetStatusCode(fasthttp.StatusInternalServerError)
 							}
 							myLog.Log.Debugf("SendOrderToKafka")
 						} else {
@@ -157,8 +150,7 @@ func (hb *HandlersBuilder) SetGenerateJson() func(ctx *fasthttp.RequestCtx) {
 			}
 		} else {
 			ctx.SetStatusCode(fasthttp.StatusMethodNotAllowed)
-			// fmt.Println("GET", ctx.Response.StatusCode())
-			// myLog.Log.Warnf("message from func Set %v", my_errors.ErrMethodNotAllowed.Error())
+			myLog.Log.Warnf("message from func Set %v", myErrors.ErrMethodNotAllowed.Error())
 		}
 	}, "SetGenerateJson")
 }

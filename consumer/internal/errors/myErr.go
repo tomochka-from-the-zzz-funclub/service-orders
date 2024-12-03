@@ -33,10 +33,10 @@ func (e Error) Error() string {
 var ErrParseJSON = NewError(fasthttp.StatusBadRequest, "error decoding json")
 var ErrEqualJSON = NewError(fasthttp.StatusBadRequest, "error read information in JSON format: empty")
 
-//database
-
+// database
 var ErrCreatePostgresConnection = NewError(fasthttp.StatusInternalServerError, "don't create postgres connection")
 var ErrPing = NewError(fasthttp.StatusInternalServerError, "error ping postgres")
+var ErrNotFoundOrder = NewError(fasthttp.StatusNotFound, "not found order in bd")
 
 // http
 var ErrMethodNotAllowed = NewError(fasthttp.StatusMethodNotAllowed, "method not allowed")

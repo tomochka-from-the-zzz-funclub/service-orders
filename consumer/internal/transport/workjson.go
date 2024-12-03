@@ -6,7 +6,6 @@ import (
 	"time"
 
 	myErrors "consumer/internal/errors"
-	myLog "consumer/internal/logger"
 	"consumer/internal/models"
 
 	"github.com/valyala/fasthttp"
@@ -16,7 +15,6 @@ func ParseJsonOrder(ctx *fasthttp.RequestCtx) (models.Order, error) {
 	var order models.Order
 	err := json.NewDecoder(bytes.NewReader(ctx.Request.Body())).Decode(&order)
 	if err != nil {
-		//myLog.Log.Errorf("error in parse json", err.Error())
 		return models.Order{}, myErrors.ErrParseJSON
 	}
 
@@ -35,19 +33,6 @@ func WriteJson(ctx *fasthttp.RequestCtx, s string) error {
 		return err
 	}
 	return nil
-}
-
-func ParseJsonUUID(order_json string) (string, error) {
-	var orderUUID struct {
-		ID string `json:"order_uid"`
-	}
-	err := json.NewDecoder(bytes.NewReader([]byte(order_json))).Decode(&orderUUID)
-	if err != nil {
-		myLog.Log.Errorf("error in parse json", err.Error())
-		return "", myErrors.ErrParseJSON
-	}
-
-	return orderUUID.ID, nil
 }
 
 func WriteJsonOrder(ctx *fasthttp.RequestCtx, order models.Order) error {

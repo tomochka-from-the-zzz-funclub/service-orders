@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"consumer/internal/config"
+	myErrors "consumer/internal/errors"
 	my_errors "consumer/internal/errors"
 	myLog "consumer/internal/logger"
 	"consumer/internal/service"
@@ -53,40 +54,10 @@ func HandleCreate(cfg config.Config, s service.InterfaceService) {
 		http.ListenAndServe(":8090", nil)
 	}()
 
-	hb.rout.GET("/WB/get", hb.Get())
-	hb.rout.GET("/WB", hb.GetHtml())
+	hb.rout.GET("/api/v1/get", hb.Get())
+	hb.rout.GET("/api/v1", hb.GetHtml())
 	fmt.Println(fasthttp.ListenAndServe(":8080", hb.rout.Handler))
 }
-
-// func (hb *HandlersBuilder) Get() func(ctx *fasthttp.RequestCtx) {
-// 	myLog.Log.Infof("start func Get")
-// 	return metrics(func(ctx *fasthttp.RequestCtx) {
-// 		if ctx.IsGet() {
-// 			orderUUIDjson := string(ctx.QueryArgs().Peek("order_uid"))
-// 			myLog.Log.Debugf("sucsess parse json in func Get with id %+v", orderUUIDjson)
-// 			order, err := hb.srv.GetOrderSrv(orderUUIDjson)
-// 			if err != nil {
-// 				// err_ := WriteJson(ctx, err.Error())
-// 				// if err_ != nil {
-// 				myLog.Log.Warnf("there is no way to record an error")
-// 				//}
-// 				ctx.SetStatusCode(fasthttp.StatusNotFound)
-// 			} else {
-// 				myLog.Log.Debugf("sucsess get")
-// 				err_ := WriteJsonOrder(ctx, order)
-// 				if err_ != nil {
-// 					myLog.Log.Warnf("there is no way to record an error")
-// 				}
-// 			}
-// 		} else {
-// 			err_ := WriteJson(ctx, my_errors.ErrMethodNotAllowed.Error())
-// 			if err_ != nil {
-// 				myLog.Log.Warnf("there is no way to record an error")
-// 			}
-// 			myLog.Log.Warnf("MethodNotAllowed")
-// 		}
-// 	}, "Get")
-// }
 
 func (hb *HandlersBuilder) GetHtml() func(ctx *fasthttp.RequestCtx) {
 	return metrics(func(ctx *fasthttp.RequestCtx) {
@@ -98,7 +69,6 @@ func (hb *HandlersBuilder) GetHtml() func(ctx *fasthttp.RequestCtx) {
 				ctx.Response.SetStatusCode(400)
 				return
 			}
-			//ctx.Response.Header.Set("Content-Type", "text/plain")
 
 			ctx.Response.Header.Add("content-type", "text/html")
 		}
@@ -116,9 +86,13 @@ func (hb *HandlersBuilder) Get() func(ctx *fasthttp.RequestCtx) {
 				myLog.Log.Debugf("func Get with id %+v", orderUUID)
 				order, err := hb.srv.GetOrderSrv(orderUUID)
 				if err != nil {
-					WriteJson(ctx, err.Error())
+					if err == myErrors.ErrNotFoundOrder {
+						ctx.SetStatusCode(fasthttp.StatusNotFound)
+					} else {
+						ctx.SetStatusCode(fasthttp.StatusInternalServerError)
+					}
 				} else {
-					myLog.Log.Debugf("sucsess get: ", order.Delivery.Name)
+					myLog.Log.Debugf("sucsess get: %+v", order.OrderUID)
 
 					WriteJsonOrder(ctx, order)
 				}

@@ -15,13 +15,21 @@ import (
 
 type Srv struct {
 	cache store.Cache
-	db    database.InterfacePadtgresDB
+	db    database.InterfacePostgresDB
 }
 
 func NewSrv(cfg config.Config) *Srv {
+	base := database.NewPostgres(cfg)
+	c, err := base.GetAllOrders()
+
+	if err != nil {
+		myLog.Log.Warnf("cache not restored")
+		c = make(map[string]models.Order)
+	}
+	myLog.Log.Debugf("cache restored!")
 	return &Srv{
-		cache: store.NewStore(),
-		db:    database.NewPostgres(cfg),
+		cache: store.NewStore(c),
+		db:    base,
 	}
 }
 
@@ -41,7 +49,7 @@ func (s *Srv) GetOrderSrv(orderUUID string) (models.Order, error) {
 
 func (s *Srv) SetOrder(order models.Order) (string, error) {
 	myLog.Log.Debugf("SetOrder")
-	id, err := s.db.AddOrder(order)
+	id, err := s.db.AddOrderStruct(order)
 	if err != nil {
 		return "", err
 	}

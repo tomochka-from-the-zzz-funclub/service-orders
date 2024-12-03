@@ -1,6 +1,5 @@
 package models
 
-// Структура для товара
 type Item struct {
 	ChrtID      int    `json:"chrt_id"`
 	TrackNumber string `json:"track_number"`
@@ -15,7 +14,6 @@ type Item struct {
 	Status      int    `json:"status"`
 }
 
-// Структура для информации о доставке
 type Delivery struct {
 	Name    string `json:"name"`
 	Phone   string `json:"phone"`
@@ -26,7 +24,6 @@ type Delivery struct {
 	Email   string `json:"email"`
 }
 
-// Структура для информации об оплате
 type Payment struct {
 	Transaction  string `json:"transaction"`
 	RequestID    string `json:"request_id"`
@@ -40,7 +37,6 @@ type Payment struct {
 	CustomFee    int    `json:"custom_fee"`
 }
 
-// Основная структура заказа
 type Order struct {
 	OrderUID          string   `json:"order_uid"`
 	TrackNumber       string   `json:"track_number"`

@@ -68,7 +68,7 @@
             const output = document.getElementById('output');
             output.textContent = 'Загрузка...';
 
-            fetch(`http://localhost:8080/WB/get?order_uid=${encodeURIComponent(orderId)}`)
+            fetch(`http://localhost:8080/api/v1/get?order_uid=${encodeURIComponent(orderId)}`)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`Ошибка: ${response.status}`);

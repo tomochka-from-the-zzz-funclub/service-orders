@@ -4,6 +4,7 @@ import (
 	myLog "consumer/internal/logger"
 	"consumer/internal/models"
 	"errors"
+
 	"sync"
 	"time"
 )
@@ -19,14 +20,19 @@ type OrderCache struct {
 }
 
 func NewOrderCache(ord models.Order) OrderCache {
+
 	return OrderCache{
 		Ord:        ord,
 		TimeCreate: time.Now(),
 	}
 }
 
-func NewStore() *Store {
-	return &Store{data: make(map[string]OrderCache)}
+func NewStore(c map[string]models.Order) *Store {
+	result := make(map[string]OrderCache)
+	for id, str := range c {
+		result[id] = NewOrderCache(str)
+	}
+	return &Store{data: result}
 }
 
 func (s *Store) Add(order models.Order) error {
@@ -47,21 +53,9 @@ func (s *Store) Get(OrderUID string) (models.Order, error) {
 	defer s.mu.RUnlock()
 	val, ok := s.data[OrderUID]
 	if ok {
-		//s.mu.Unlock()
 		return val.Ord, nil
 	}
-	//s.mu.Unlock()
 	return models.Order{}, errors.New("there isn't record with such OrderUID")
-}
-
-func (s *Store) GetAll() []models.Order {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	res := make([]models.Order, 0, len(s.data)) // Исправлено создание среза
-	for _, order := range s.data {
-		res = append(res, order.Ord)
-	}
-	return res
 }
 
 func (c *Store) StartGC() {
@@ -70,12 +64,12 @@ func (c *Store) StartGC() {
 
 func (c *Store) GC() {
 	for {
+		time.Sleep(10 * time.Minute)
 		c.DeleteExpiredKeys()
 	}
 
 }
 
-// expiredKeys возвращает список "просроченных" ключей
 func (c *Store) DeleteExpiredKeys() {
 
 	c.mu.Lock()

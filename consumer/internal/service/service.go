@@ -26,7 +26,7 @@ func NewSrv(cfg config.Config) *Srv {
 }
 
 func (s *Srv) GetOrderSrv(orderUUID string) (models.Order, error) {
-	myLog.Log.Debugf("GetOrderSrv")
+	myLog.Log.Debugf("GetOrderSrv with id: %+v", orderUUID)
 	order, err := s.cache.Get(orderUUID)
 	if err != nil {
 		orderdb, err := s.db.GetOrder(orderUUID)

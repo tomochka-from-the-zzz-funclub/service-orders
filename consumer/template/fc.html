@@ -68,7 +68,7 @@
             const output = document.getElementById('output');
             output.textContent = 'Загрузка...';
 
-            fetch(`http://localhost:8080/WB/get?order_uuid=${encodeURIComponent(orderId)}`)
+            fetch(`http://localhost:8080/WB/get?order_uid=${encodeURIComponent(orderId)}`)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`Ошибка: ${response.status}`);
@@ -86,29 +86,3 @@
 </body>
 </html>
 
-<!-- 
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Получить данные</title>
-    <link rel="stylesheet" href="styles.css"> <!-- Подключение CSS -->
-<!-- </head>
-<body>
-    <div class="container">
-        <h1>Получить данные</h1>
-        <input type="text" id="orderInput" placeholder="Введите ID заказа">
-        <button id="getButton">Получить</button>
-        <div id="output" class="output"></div>
-        
-        <div id="order-widget">
-            <h4>Детали заказа:</h4>
-            <div id="order-details"></div>
-            <button id="close-button">Скрыть</button>
-        </div>
-    </div>
-
-    <script src="script.js"></script> <!-- Подключение JavaScript -->
-<!-- </body>
-</html> --> --> -->

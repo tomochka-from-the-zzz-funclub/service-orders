@@ -368,25 +368,22 @@ func (db *Postgres) AddOrder(order models.Order) (string, error) {
 // }
 
 func (db *Postgres) GetOrder(order_uuid string) (models.Order, error) {
-	myLog.Log.Debugf("Go to db in GetOrder")
+	myLog.Log.Debugf("Go to db in GetOrder with id: %+v", order_uuid)
 	var order models.Order
 	var delivery models.Delivery
 	var payment models.Payment
 	query_get_order := `
     SELECT 
         o.track_number, 
-        o.entry,
+        o.entry, o.items, o.locale, o.internal_signature, o.customer_id, o.delivery_service, o.shardkey, o.sm_id, o.date_created, o.oof_shard,
         d.name, d.phone, d.zip, d.city, d.address, d.region, d.email,
-        p.transaction, p.request_id, p.currency, p.provider, p.amount, p.payment_dt, p.bank, p.delivery_cost, p.goods_total, p.custom_fee,
-        i.chrt_id, i.track_number, i.price, i.rid, i.name, i.sale, i.size, i.total_price, i.nm_id, i.brand, i.status
+        p.transaction, p.request_id, p.currency, p.provider, p.amount, p.payment_dt, p.bank, p.delivery_cost, p.goods_total, p.custom_fee
     FROM 
         orders o
     LEFT JOIN 
         delivery d ON o.delivery = d.id
     LEFT JOIN 
         payment p ON o.payment = p.id
-    LEFT JOIN 
-        items i ON i.id = ANY(o.items)
     WHERE 
         o.order_uid = $1`
 	rows, err := db.Connection.Query(query_get_order, order_uuid)
@@ -395,12 +392,22 @@ func (db *Postgres) GetOrder(order_uuid string) (models.Order, error) {
 		return models.Order{}, err
 	}
 	defer rows.Close()
-	itemMap := make(map[string]models.Item)
+	//itemMap := make(map[string]models.Item)
+	var id_items []string
 	for rows.Next() {
-		var item models.Item
+		//var item models.Item
 		err = rows.Scan(
 			&order.TrackNumber,
 			&order.Entry,
+			pq.Array(&id_items),
+			&order.Locale,
+			&order.InternalSignature,
+			&order.CustomerID,
+			&order.DeliveryService,
+			&order.ShardKey,
+			&order.SmID,
+			&order.DateCreated,
+			&order.OofShard,
 			&delivery.Name,
 			&delivery.Phone,
 			&delivery.Zip,
@@ -418,25 +425,43 @@ func (db *Postgres) GetOrder(order_uuid string) (models.Order, error) {
 			&payment.DeliveryCost,
 			&payment.GoodsTotal,
 			&payment.CustomFee,
-			&item.ChrtID,
-			&item.TrackNumber,
-			&item.Price,
-			&item.Rid,
-			&item.Name,
-			&item.Sale,
-			&item.Size,
-			&item.TotalPrice,
-			&item.NmID,
-			&item.Brand,
-			&item.Status,
+			// &item.ChrtID,
+			// &item.TrackNumber,
+			// &item.Price,
+			// &item.Rid,
+			// &item.Name,
+			// &item.Sale,
+			// &item.Size,
+			// &item.TotalPrice,
+			// &item.NmID,
+			// &item.Brand,
+			// &item.Status,
 		)
 		if err != nil {
 			myLog.Log.Errorf("Error scanning row: %v", err.Error())
 			return models.Order{}, err
 		}
 	}
-	for _, item := range itemMap {
-		order.Items = append(order.Items, item)
+
+	query_get_item :=
+		`SELECT chrt_id, track_number, price, rid, name, sale, size, total_price, nm_id, brand, status
+	WHERE id = $1`
+	var item models.Item
+	var items []models.Item
+	for i := 0; i < len(order.Items); i++ {
+		err = db.Connection.QueryRow(query_get_item, order.Items[i]).Scan(&item.ChrtID, &item.TrackNumber, &item.Price, &item.Rid, &item.Name, &item.Sale, &item.Size,
+			&item.TotalPrice, &item.NmID, &item.Brand, &item.Status)
+		if err != nil {
+			myLog.Log.Errorf("Error GetItems: %v", err.Error())
+			return models.Order{}, err
+		}
+		items = append(items, item)
 	}
+	// for _, item := range itemMap {
+	// 	order.Items = append(order.Items, item)
+	// }
+	order.Items = items
+	order.Delivery = delivery
+	order.Payment = payment
 	return order, nil
 }

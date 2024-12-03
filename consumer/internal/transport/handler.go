@@ -36,7 +36,7 @@ func HandleCreate(cfg config.Config, s service.InterfaceService) {
 	}
 
 	fmt.Println("Абсолютный путь к директории:", absolutePath)
-	tmpl, err := template.ParseFiles("../app/fw.html")
+	tmpl, err := template.ParseFiles("../app/fc.html")
 	if err != nil {
 		myLog.Log.Fatalf("GetHtml error during parsing of file: %v", err)
 		return
@@ -54,7 +54,7 @@ func HandleCreate(cfg config.Config, s service.InterfaceService) {
 	}()
 
 	hb.rout.GET("/WB/get", hb.Get())
-	hb.rout.GET("/WB/get", hb.GetHtml())
+	hb.rout.GET("/WB", hb.GetHtml())
 	fmt.Println(fasthttp.ListenAndServe(":8080", hb.rout.Handler))
 }
 
@@ -110,23 +110,19 @@ func (hb *HandlersBuilder) Get() func(ctx *fasthttp.RequestCtx) {
 	return metrics(func(ctx *fasthttp.RequestCtx) {
 		if ctx.IsGet() {
 			orderUUID := string(ctx.QueryArgs().Peek("order_uid"))
-			myLog.Log.Debugf("sucsess parse json in func Get with id %+v", orderUUID)
-
-			//orderUUID, err_ := ParseJsonUUID(ctx)
-			// if err_ != nil {
-			// 	err_ := WriteJson(ctx, err_.Error())
-			// 	if err_ != nil {
-			// 	}
-			// } else {
-			//myLog.Log.Debugf("sucsess parse")
-			order, err := hb.srv.GetOrderSrv(orderUUID)
-			if err != nil {
-				WriteJson(ctx, err.Error())
+			if orderUUID == "" {
+				myLog.Log.Debugf("equql reqeust")
 			} else {
-				myLog.Log.Debugf("sucsess get")
-				WriteJsonOrder(ctx, order)
+				myLog.Log.Debugf("func Get with id %+v", orderUUID)
+				order, err := hb.srv.GetOrderSrv(orderUUID)
+				if err != nil {
+					WriteJson(ctx, err.Error())
+				} else {
+					myLog.Log.Debugf("sucsess get: ", order.Delivery.Name)
+
+					WriteJsonOrder(ctx, order)
+				}
 			}
-			//}
 		} else {
 			WriteJson(ctx, my_errors.ErrMethodNotAllowed.Error())
 			ctx.SetStatusCode(fasthttp.StatusMethodNotAllowed)
